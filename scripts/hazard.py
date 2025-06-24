@@ -16,7 +16,7 @@ warnings.filterwarnings("ignore")
 path = os.getcwd() + r"/flood-data-ecosystem-Odisha"
 
 # Load data
-master_variables = pd.read_csv(os.getcwd()+'/flood-data-ecosystem-Odisha/RiskScoreModel/data/MASTER_VARIABLES.csv')
+master_variables = pd.read_csv(os.getcwd()+'/data/MASTER_VARIABLES.csv')
 hazard_vars = ['inundation_intensity_mean_nonzero', 'inundation_intensity_sum', 'mean_rain', 'max_rain','drainage_density', 'Sum_Runoff', 'Peak_Runoff','slope_mean','elevation_mean','distance_from_river','distance_from_sea']
 hazard_df = master_variables[hazard_vars + ['timeperiod', 'object_id']]
 hazard_df_months = []
@@ -32,7 +32,7 @@ def custom_binning(df, var):
         (df[var] > df[var].quantile(0.5)) & (df[var] <= df[var].quantile(0.75)),
         (df[var] > df[var].quantile(0.75))
     ]
-    return np.select(conditions, categories, default='outlier')
+    return np.select(conditions, categories, default=0)
 
 reversed_categories = [5,4,3,2,1]
 def custom_binning_reversed(df, var):
@@ -43,7 +43,7 @@ def custom_binning_reversed(df, var):
         (df[var] >= df[var].quantile(0.75)) & (df[var] < df[var].quantile(1.0)),  # 75th to 100th percentile (excluding max)
         (df[var] >= df[var].quantile(1.0))  # Including max value
     ]
-    return np.select(conditions, categories, default='outlier')
+    return np.select(conditions, categories, default=0)
 
 
 # Method 2: Log Transformation with Quantile Binning
@@ -83,4 +83,4 @@ master_variables = master_variables.merge(hazard[['timeperiod', 'object_id', 'fl
 
 
 # Save the final results
-master_variables.to_csv(os.getcwd() + r'/flood-data-ecosystem-Odisha/RiskScoreModel/data/factor_scores_l1_hazard.csv', index=False)
+master_variables.to_csv(os.getcwd() + r'/data/factor_scores_l1_hazard.csv', index=False)

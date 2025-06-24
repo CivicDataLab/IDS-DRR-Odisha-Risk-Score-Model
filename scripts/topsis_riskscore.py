@@ -12,7 +12,7 @@ resp_w = 2
 ## MASTER DATA WITH FACTOR SCORES
 #print(os.getcwd())
 ## INPUT: FACTOR SCORES CSV
-factor_scores_dfs = glob.glob(os.getcwd()+'/IDS-DRR-Assam/RiskScoreModel/data/factor_scores_l1*.csv')
+factor_scores_dfs = glob.glob(os.getcwd()+'/data/factor_scores_l1*.csv')
 
 # Select only the columns that exist in both the DataFrame and the list
 factors = [ 'flood-hazard', 'exposure', 'vulnerability','government-response']#,'historical_tenders','flood-hazard-float']
@@ -57,10 +57,10 @@ for month in merged_df.timeperiod.unique():
 
 topsis = pd.concat(df_months)
 topsis.columns = [col.lower().replace('_', '-').replace(' ', '-') for col in topsis.columns]
-topsis.to_csv(os.getcwd()+'/IDS-DRR-Assam/RiskScoreModel/data/risk_score.csv', index=False)
+topsis.to_csv(os.getcwd()+'/data/risk_score.csv', index=False)
 
 ## DISTRICT LEVEL SCORES
-dist_ids = pd.read_csv(os.getcwd()+r'/IDS-DRR-Assam/RiskScoreModel/assets/district_objectid.csv')
+dist_ids = pd.read_csv(os.getcwd()+r'/assets/district_objectid.csv')
 
 compositescorelabels = ['1','2','3','4','5']
 
@@ -103,4 +103,4 @@ print(topsis.shape)
 
 final = pd.concat([topsis, dist], ignore_index=True)
 final.rename(columns={'preparedness-measures-tenders-awarded-value': 'restoration-measures-tenders-awarded-value'}, inplace=True)
-final.to_csv(os.getcwd()+r'/IDS-DRR-Assam/RiskScoreModel/data/risk_score_final.csv', index=False)
+final.to_csv(os.getcwd()+r'/data/risk_score_final.csv', index=False)

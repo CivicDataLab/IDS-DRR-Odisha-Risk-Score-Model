@@ -8,7 +8,7 @@ import warnings
 # Suppress all warnings
 warnings.filterwarnings("ignore")
 
-master_variables = pd.read_csv(os.getcwd()+'/flood-data-ecosystem-Odisha/RiskScoreModel/data/MASTER_VARIABLES.csv')
+master_variables = pd.read_csv(os.getcwd()+'/data/MASTER_VARIABLES.csv')
 
 exposure_vars = ['sum_population', 'total_hhd',
                       "schools_count",
@@ -20,7 +20,7 @@ exposure_vars = ['sum_population', 'total_hhd',
 exposure_df = master_variables[exposure_vars + ['timeperiod', 'object_id']]
 
 
-exposure_df_months = []
+exposure_df_months = [] 
 for month in tqdm(exposure_df.timeperiod.unique()):
     exposure_df_month = exposure_df[exposure_df.timeperiod == month]
     # Initialize MinMaxScaler
@@ -50,7 +50,7 @@ for month in tqdm(exposure_df.timeperiod.unique()):
     categories = [1, 2, 3, 4, 5]
     
     # Create the new column based on the conditions
-    exposure_df_month['exposure'] = np.select(conditions, categories, default='outlier')
+    exposure_df_month['exposure'] = np.select(conditions, categories)
 
     exposure_df_months.append(exposure_df_month)
 
@@ -59,4 +59,4 @@ exposure = pd.concat(exposure_df_months)
 master_variables = master_variables.merge(exposure[['timeperiod', 'object_id', 'exposure']],
                        on = ['timeperiod', 'object_id'])
 
-master_variables.to_csv(os.getcwd()+'/flood-data-ecosystem-Odisha/RiskScoreModel/data/factor_scores_l1_exposure.csv', index=False)
+master_variables.to_csv(os.getcwd()+'/data/factor_scores_l1_exposure.csv', index=False)
