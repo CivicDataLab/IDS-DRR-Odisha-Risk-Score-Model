@@ -8,4 +8,5 @@ scipy==1.16.0
 six==1.17.0
 threadpoolctl==3.6.0
 topsis==0.2
+tqdm==4.67.1
 tzdata==2025.2
