@@ -1,116 +1,128 @@
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import MinMaxScaler
-from tqdm import tqdm 
-import os
+#!/usr/bin/env python3
+# government-response-weight.py
+#
+# Build “government-response” scores:
+#   • cumulative tender values (per FY and per district)
+#   • month-wise Min-Max scaling
+#   • 5-level risk buckets (1 = least response, 5 = strongest response)
+# ---------------------------------------------------------------------------
+
 import warnings
+from pathlib import Path
 
-# Suppress all warnings
-warnings.filterwarnings("ignore")
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+from tqdm import tqdm
 
-master_variables = pd.read_csv(os.getcwd()+'/flood-data-ecosystem-Odisha/RiskScoreModel/data/MASTER_VARIABLES.csv')
+warnings.filterwarnings("ignore", category=FutureWarning)   # mute pandas / sklearn chatter
 
-master_variables = master_variables.sort_values(['object_id', 'timeperiod'])
+# ---------------------------------------------------------------------------
+# 1. CONFIG
+# ---------------------------------------------------------------------------
+DATA_DIR  = Path("data")
+IN_FILE   = DATA_DIR / "MASTER_VARIABLES.csv"
+OUT_FILE  = DATA_DIR / "factor_scores_l1_government-response.csv"
 
-# Calculate historical tenders
-master_variables['historical_tenders'] = (
-    master_variables
-    .groupby(['timeperiod','object_id'])['total_tender_awarded_value']
-    .cumsum()
-)
+# columns
+GOV_RESPONSE_VARS = [
+    "total_tender_awarded_value",
+    "SDRF_sanctions_awarded_value",
+    "RIDF_tenders_awarded_value",
+    "Preparedness Measures_tenders_awarded_value",
+    "Immediate Measures_tenders_awarded_value",
+    "Others_tenders_awarded_value",
+]
 
-def get_financial_year(timeperiod):
-    if int(timeperiod.split('_')[1]) >= 4:
-        return str(int(timeperiod.split('_')[0]))+'-'+str(int(timeperiod.split('_')[0])+1)
-    else:
-        return str(int(timeperiod.split('_')[0]) - 1)+'-'+str(int(timeperiod.split('_')[0]))
-    
-# Apply the function to create the 'FinancialYear' column
-master_variables['FinancialYear'] = master_variables['timeperiod'].apply(lambda x: get_financial_year(x))
+MODEL_VARS = [                 # used for Min–Max scaling + sum
+    "total_tender_awarded_value",
+    "SDRF_sanctions_awarded_value",
+    "Others_tenders_awarded_value",
+]
 
-#INPUT VARS
-government_response_vars = ["total_tender_awarded_value",
-                           "SDRF_sanctions_awarded_value",
-                       #"SOPD_tenders_awarded_value",
-                       #"SDRF_tenders_awarded_value",
-                       "RIDF_tenders_awarded_value",
-                       #"LTIF_tenders_awarded_value",
-                       #"CIDF_tenders_awarded_value",
-                       "Preparedness Measures_tenders_awarded_value",
-                       "Immediate Measures_tenders_awarded_value",
-                       "Others_tenders_awarded_value",
-                      ]
+# ---------------------------------------------------------------------------
+# 2. HELPERS
+# ---------------------------------------------------------------------------
+def to_fin_year(tp: str) -> str:
+    """Convert 'YYYY_MM' timeperiod → 'YYYY-YY' FY string."""
+    yr, m = map(int, tp.split("_"))
+    return f"{yr if m >= 4 else yr-1}-{(yr+1)%100 if m >= 4 else yr%100:02d}"
 
-# Find cumsum in each FY of the government response vars
-for var in government_response_vars:
-    #var.astype(int)
-    master_variables[var]=master_variables.groupby(['object_id','FinancialYear'])[var].cumsum()
-
-
-govtresponse_df = master_variables[government_response_vars + ['timeperiod', 'object_id']]
-
-#INPUT VARS
-government_response_model_vars = ["total_tender_awarded_value",
-                            #"SDRF_sanctions_awarded_value",
-                       "Others_tenders_awarded_value"
-                      ]
-
-govtresponse_df_months = []
-for month in tqdm(govtresponse_df.timeperiod.unique()):
-    govtresponse_df_month = govtresponse_df[govtresponse_df.timeperiod == month]
-    # Initialize MinMaxScaler
+def scale_0_1(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
+    """Column-wise Min-Max scaling (returns a *copy*)."""
     scaler = MinMaxScaler()
-    # Fit scaler to the data and transform it
-    govtresponse_df_month[government_response_model_vars] = scaler.fit_transform(govtresponse_df_month[government_response_model_vars])
-    
-    # Sum scaled exposure vars
-    govtresponse_df_month['sum'] = govtresponse_df_month[government_response_model_vars].sum(axis=1)
+    df_loc = df.copy()
+    df_loc[cols] = scaler.fit_transform(df_loc[cols].astype("float64"))
+    return df_loc
 
-    # Calculate mean and standard deviation
-    mean = govtresponse_df_month['sum'].mean()
-    std = govtresponse_df_month['sum'].std()
-    
-    # Define the conditions for each category
-    ''' The original conditions
-    conditions = [
-        (govtresponse_df_month['sum'] <= mean),
-        (govtresponse_df_month['sum'] > mean) & (govtresponse_df_month['sum'] <= mean + std),
-        (govtresponse_df_month['sum'] > mean + std) & (govtresponse_df_month['sum'] <= mean + 2 * std),
-        (govtresponse_df_month['sum'] > mean + 2 * std) & (govtresponse_df_month['sum'] <= mean + 3 * std),
-        (govtresponse_df_month['sum'] > mean + 3 * std)
-    ]'''
-    #New conditions, reversed to prevent case where all districts are at high risk
-    conditions = [
-        (govtresponse_df_month['sum'] >= mean),#1
-        (govtresponse_df_month['sum'] < mean) & (govtresponse_df_month['sum'] >= mean - std),
-        (govtresponse_df_month['sum'] < mean - std) & (govtresponse_df_month['sum'] >= mean - 2 * std),
-        (govtresponse_df_month['sum'] < mean - 2 * std) & (govtresponse_df_month['sum'] >= mean - 3 * std),
-        (govtresponse_df_month['sum'] < mean - 3 * std) #5
+def bucket_response(month_df: pd.DataFrame) -> pd.Series:
+    """
+    5-level score:
+        1 = ≤ mean       (weakest response)
+        2 = (mean-1σ , mean]
+        3 = (mean-2σ , mean-1σ]
+        4 = (mean-3σ , mean-2σ]
+        5 = < mean-3σ    (strongest response)
+    """
+    s = month_df["sum"]
+    mean, std = s.mean(), s.std(ddof=0)
+
+    cond = [
+        s >= mean,
+        (s < mean) & (s >= mean - std),
+        (s < mean - std) & (s >= mean - 2 * std),
+        (s < mean - 2 * std) & (s >= mean - 3 * std),
+        s < mean - 3 * std,
     ]
 
-    # Define the corresponding categories
-    #categories = ['very low', 'low', 'medium', 'high', 'very high']
-    #categories = [5, 4, 3, 2, 1] #old
-    categories = [1, 2, 3, 4, 5]
-    
-    # Create the new column based on the conditions
-    govtresponse_df_month['government-response'] = np.select(conditions, categories, default='outlier')
+    return np.select(cond, [1, 2, 3, 4, 5], default=np.nan).astype(int)
 
-    govtresponse_df_months.append(govtresponse_df_month)
+# ---------------------------------------------------------------------------
+# 3. LOAD & PREP MASTER
+# ---------------------------------------------------------------------------
+master = (
+    pd.read_csv(IN_FILE)
+      .loc[:, ~pd.read_csv(IN_FILE).columns.duplicated()]   # drop dup headers
+      .sort_values(["object_id", "timeperiod"])
+      .assign(FinancialYear=lambda d: d["timeperiod"].map(to_fin_year))
+)
 
-govtresponse = pd.concat(govtresponse_df_months)
+# cumulative “historical_tenders” per district (across months)
+master["historical_tenders"] = (
+    master.groupby("object_id")["total_tender_awarded_value"].cumsum()
+)
 
-# Merge to include the updated government response variables and avoid duplicating columns
-#govtresponse_df_updated = govtresponse[['timeperiod', 'object_id','government-response'] + government_response_vars ]
-govtresponse_df_updated = govtresponse_df.merge(govtresponse[['timeperiod', 'object_id', 'government-response']], on = ['timeperiod', 'object_id'])
+# FY-wise cumulative sums for each response var
+for col in GOV_RESPONSE_VARS:
+    master[col] = (
+        master.groupby(["object_id", "FinancialYear"])[col]
+              .cumsum()
+              .astype("float64")          # ensure numeric for scaling
+    )
 
-master_variables = master_variables.drop(columns=government_response_vars)
+# ---------------------------------------------------------------------------
+# 4. MONTH-WISE SCORING
+# ---------------------------------------------------------------------------
+response_frames = []
+for month in tqdm(master["timeperiod"].unique(), desc="government-response"):
+    mdf = master.loc[master["timeperiod"] == month,
+                     ["object_id", "timeperiod", *MODEL_VARS]].copy()
 
+    mdf = scale_0_1(mdf, MODEL_VARS)
+    mdf["sum"] = mdf[MODEL_VARS].sum(axis=1)
 
-#master_variables = master_variables.merge(govtresponse_df[['timeperiod', 'object_id', 'government-response']+ government_response_vars],
-#                       on = ['timeperiod', 'object_id'])
+    mdf["government-response"] = bucket_response(mdf)
+    response_frames.append(mdf[["object_id", "timeperiod", "government-response"]])
 
-# Merge the updated govtresponse_df with the master_variables to update the existing columns
-master_variables = master_variables.merge(govtresponse_df_updated, on=['timeperiod', 'object_id'], how='left')
+gov_response = pd.concat(response_frames, ignore_index=True)
 
-master_variables.to_csv(os.getcwd()+'/flood-data-ecosystem-Odisha/RiskScoreModel/data/factor_scores_l1_government-response.csv', index=False)
+# ---------------------------------------------------------------------------
+# 5. MERGE BACK & SAVE
+# ---------------------------------------------------------------------------
+out = (
+    master.drop(columns=GOV_RESPONSE_VARS)        # avoid duplicates
+          .merge(gov_response, on=["object_id", "timeperiod"], how="left")
+)
+
+out.to_csv(OUT_FILE, index=False)
+print(f"✓  Saved {OUT_FILE.relative_to(Path.cwd())}")
