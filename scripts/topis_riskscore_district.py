@@ -12,10 +12,11 @@ resp_w = 2
 ## MASTER DATA WITH FACTOR SCORES
 print(os.getcwd())
 ## INPUT: FACTOR SCORES CSV
-factor_scores_dfs = glob.glob(os.getcwd()+'/flood-data-ecosystem-Odisha/RiskScoreModel/data/factor_scores_l1*.csv')
+factor_scores_dfs = glob.glob(os.getcwd()+'/data/factor_scores_l1*.csv')
 print(factor_scores_dfs[2])
 # Select only the columns that exist in both the DataFrame and the list
-factors = ['flood-hazard', 'exposure', 'vulnerability', 'government-response','efficiency']#,'historical_tenders','flood-hazard-float']
+factors = ['flood-hazard', 'exposure', 'vulnerability', 'government-response']#,'historical_tenders','flood-hazard-float']
+additional_columns = ['efficiency','flood-hazard-float','landd_score']
 
 merged_df = pd.read_csv(factor_scores_dfs[0])
 # Merge successive DataFrames in the list
@@ -27,31 +28,36 @@ for df in factor_scores_dfs[1:]:
     df = df[selected_columns + ['object_id', 'timeperiod']]
     merged_df = pd.merge(merged_df, df, on=['object_id', 'timeperiod'], how='inner')
 #df = pd.read_csv(os.getcwd()+'/RiskScoreModel/data/factor_scores.csv')
-'''
-#updating govt-response variables to be cumulative
-government_response_vars = ["total_tender_awarded_value",
-                            #"SDRF_sanctions_awarded_value",
-                       #"SOPD_tenders_awarded_value",
-                       #"SDRF_tenders_awarded_value",
-                       "RIDF_tenders_awarded_value",
-                       #"LTIF_tenders_awarded_value",
-                       #"CIDF_tenders_awarded_value",
-                       "Preparedness Measures_tenders_awarded_value",
-                       "Immediate Measures_tenders_awarded_value",
-                       "Others_tenders_awarded_value"
-                      ]
 
-govt_response_df = pd.read_csv(r'D:\CivicDataLab_IDS-DRR\IDS-DRR_Github\flood-data-ecosystem-Odisha\RiskScoreModel\data\factor_scores_l1_government-response.csv')  # Adjust path
-govt_response_df = govt_response_df[['object_id', 'timeperiod']+government_response_vars]
 
-# Merge govt_response_df into the merged dataframe to update the 'government-response' values
-merged_df = pd.merge(merged_df, govt_response_df, on=['object_id', 'timeperiod'], how='left', suffixes=('', '_updated'))
+def get_financial_year(timeperiod):
+    if int(timeperiod.split('_')[1]) >= 4:
+        return str(int(timeperiod.split('_')[0]))+'-'+str(int(timeperiod.split('_')[0])+1)
+    else:
+        return str(int(timeperiod.split('_')[0]) - 1)+'-'+str(int(timeperiod.split('_')[0]))
 
-# Update each of the government response variables
-for col in government_response_vars:
-    merged_df[col] = merged_df[f'{col}_updated']  # Directly replace values with the updated column
-    merged_df = merged_df.drop(columns=[f'{col}_updated'])  # Clean up the temporary '_updated' columns
-'''
+
+# Apply the function to create the 'FinancialYear' column
+merged_df['financial_year'] = merged_df['timeperiod'].apply(lambda x: get_financial_year(x))
+
+
+# Ensure sorting for proper cumulative sum
+merged_df.sort_values(by=['object_id', 'financial_year', 'timeperiod'], inplace=True)
+
+cumulative_vars = [
+    'total_tender_awarded_value', 
+    #'Repair and Restoration_tenders_awarded_value',
+    'Preparedness Measures_tenders_awarded_value', 
+    'Immediate Measures_tenders_awarded_value', 
+    'Others_tenders_awarded_value',
+    #'relief_and_mitigation_sanction_value',
+    'SDRF_sanctions_awarded_value',
+]
+
+for var in cumulative_vars:
+    cum_var_name = var + "_fy_cumsum"
+    merged_df[cum_var_name] = merged_df.groupby(['object_id', 'financial_year'])[var].cumsum()
+
 df_months = []
 
 for month in merged_df.timeperiod.unique():
@@ -81,10 +87,10 @@ topsis = pd.concat(df_months)
 
 topsis.columns = [col.lower().replace('_', '-').replace(' ', '-') for col in topsis.columns]
 print(topsis.columns)
-topsis.to_csv(os.getcwd()+'/flood-data-ecosystem-Odisha/RiskScoreModel/data/risk_score.csv', index=False)
+topsis.to_csv(os.getcwd()+r'/data/risk_score.csv', index=False)
 
 ## DISTRICT LEVEL SCORES
-dist_ids = pd.read_csv(os.getcwd()+r'/flood-data-ecosystem-Odisha/RiskScoreModel/assets/district_objectid.csv')
+dist_ids = pd.read_csv(os.getcwd()+r'/assets/district_objectid.csv')
 
 compositescorelabels = ['1','2','3','4','5']
 
@@ -117,14 +123,14 @@ dist_risk = dist_risk.merge(dist_ids, on='district')
 
 indicators = ['total-tender-awarded-value',
     #'sopd-tenders-awarded-value',
-    #'sdrf-sanctions-awarded-value',
+    'sdrf-sanctions-awarded-value',
     #'sdrf-tenders-awarded-value',
     #'ridf-tenders-awarded-value',
     #'ltif-tenders-awarded-value',
     #'cidf-tenders-awarded-value',
-    #'preparedness-measures-tenders-awarded-value',
-    #'immediate-measures-tenders-awarded-value',
-    #'others-tenders-awarded-value',
+    'preparedness-measures-tenders-awarded-value',
+    'immediate-measures-tenders-awarded-value',
+    'others-tenders-awarded-value',
     #'total-animal-washed-away',
     #'total-animal-affected',
     #'total-house-fully-damaged',
@@ -179,73 +185,65 @@ indicators = ['total-tender-awarded-value',
     'max-rain',
     'mean-rain',
     'sum-rain',
-    'efficiency',
+    #'efficiency',
 
     'mean-daily-runoff',
     'sum-runoff',
     'peak-runoff',
-    'distance-from-sea'
+    'distance-from-sea',
+    "total-no-of-death-of-humans-in-flood-and-cyclone",
+    "population-affected", 
+    "cultivated-area-affected-in-hectare",
+    "road-length",
+
+    'crop-loss-total-in-hact', 
+    'no-of-persons-evacuated-in-cyclone-bulbul', 
+    'no-of-person-evacuated', 
+    'total-livestock-lost-in-cyclone-bulbul',
+    'house-damage-total--in-cyclone-fani', 
+    'no-of-persons-rescued', 
+    'healthcenters', 
+    'immediate-measures-tenders-awarded-value-fy-cumsum', 
+    'total-tender-awarded-value-fy-cumsum', 
+    'others-tenders-awarded-value-fy-cumsum', 
+    'sdrf-sanctions-awarded-value-fy-cumsum', 
+    'house-damage-total', 
+    'population-affected-in-cyclone-bulbul', 
+    'preparedness-measures-tenders-awarded-value-fy-cumsum',
+    'cultivated-area-affected-in-hectare-in-cyclone-bulbul', 
+    'cultivated-area-affected-in-hectare-in-cyclone-fani', 
+    'topsis-score', 
+    'total-livestock-lost', 
+    'total-livestock-affected-in-cyclone-fani', 
+    'total-livestock-lost-in-cyclone-fani', 
+    'house-damage-total--in-cyclone-bulbul', 
+    'population-affected-in-cyclone-fani', 
+    'no-of-person-evacuated-in-cyclone-fani'
+
     #'topsis-score',
     #'risk-score',
     #'exposure',
     #'vulnerability',
     #'government-response',
+
     ]
-
-
-# Unused aggreagtio rules
-"""
-'sopd-tenders-awarded-value': 'sum',
-'sdrf-sanctions-awarded-value': 'sum',
-'sdrf-tenders-awarded-value': 'sum',
-'ltif-tenders-awarded-value': 'sum',
-'cidf-tenders-awarded-value': 'sum',
-
-'total-animal-washed-away': 'sum',
-'total-animal-affected': 'sum',
-'total-house-fully-damaged': 'sum',
-'embankments-affected': 'sum',
-'roads': 'sum',
-'bridge': 'sum',
-'embankment-breached': 'sum',
-'human-live-lost': 'sum',
-'water':'mean',
-'trees':'mean',
-'rangeland':'mean',
-'crops':'mean',
-'flooded-vegetation':'mean',
-'built-area':'mean',
-'bare-ground':'mean',
-'clouds':'mean',
-'mean-ndvi':'mean',
-'mean-ndbi':'mean',
-'riverlevel-mean':'mean',
-'mean-cn':'mean',
-'population-affected-total': 'max',
-'crop-area': 'max',
-    'riverlevel-max':'max',
-
-'riverlevel-min':'min'
-
-
-"""
 
 # Define aggregation rules based on the columns
 aggregation_rules = {
     # Sum columns
     'total-tender-awarded-value': 'sum',
     #'ridf-tenders-awarded-value': 'sum',
-    #'preparedness-measures-tenders-awarded-value': 'sum',
+    'preparedness-measures-tenders-awarded-value': 'sum',
     'immediate-measures-tenders-awarded-value': 'sum',
-    #'others-tenders-awarded-value': 'sum',
-
+    'others-tenders-awarded-value': 'sum',
+    'sdrf-sanctions-awarded-value': 'sum',
 
     'sum-population': 'sum',
     'inundation-intensity-sum': 'sum',
     'total-hhd': 'sum',
     'sum-aged-population': 'sum',
     'schools-count': 'sum',
-    #'healthcenters': 'sum',
+    'healthcenters': 'sum',
     'road-length': 'sum',
     'rail-length': 'sum',
     'sum-rain': 'sum',
@@ -265,40 +263,36 @@ aggregation_rules = {
     'avg-electricity': 'mean',
     'block-piped-hhds-pct': 'mean',
     'mean-sex-ratio': 'mean',
-    'mean-rain':'mean',
-    'elevation-mean':'mean',
-    'slope-mean':'mean',
-    'avg-tele':'mean',
-    'distance-from-river':'mean',
-    'distance-from-sea':'mean',
-    'mean-daily-runoff':'mean',
-    'sum-runoff':'sum',
-    'peak-runoff':'max',
+    'mean-rain': 'mean',
+    'elevation-mean': 'mean',
+    'slope-mean': 'mean',
+    'avg-tele': 'mean',
+    'distance-from-river': 'mean',
+    'distance-from-sea': 'mean',
+    'mean-daily-runoff': 'mean',
+    'sum-runoff': 'sum',
+    'peak-runoff': 'max',
 
-    'efficiency':'mean',
+    #'efficiency': 'mean',
 
-    #'topsis-score': 'mean',
-    #'risk-score': 'mean',
-    #'exposure': 'mean',
-    #'vulnerability': 'mean',
-    #'government-response': 'mean',
+    "total-no-of-death-of-humans-in-flood-and-cyclone": 'sum',
+    "population-affected": 'max', 
+    "cultivated-area-affected-in-hectare": 'sum',
+    "road-length": 'sum',
 
-    # Max for hazard levels
-    
-    'max-rain':'max',
    
-
-
+    # Max for hazard levels
+    'max-rain':'max',
 }
 
 rounding_rules = {
     'avg-tele': 1,  # Round column 'A' to 1 decimal place
     'avg-electricity': 1,
 
-    'mean-sexratio': 2,  
+    'mean-sex-ratio': 2,  
     'inundation-intensity-mean-nonzero': 2,  
-    'rc-piped-hhds-pct':2,
-    'rc-nosanitation-hhds-pct':2,
+    'block-piped-hhds-pct':2,
+    'block-nosanitation-hhds-pct':2,
     'inundation-intensity-sum':2,
     'max-rain':2,
     'mean-rain':2,
@@ -312,7 +306,7 @@ rounding_rules = {
     'road-length':0,
     'elevation-mean':0,
     'slope-mean':0,
-    'crop-area':0,
+    #'crop-area':0,
 
 }
 
@@ -346,6 +340,8 @@ dist = pd.concat([dist_indicators,
                   dist_risk['risk-score']], 
                   axis=1)
 '''
+
+
 dist = pd.concat([dist_vul.set_index(['district', 'timeperiod']),
                   dist_exp.set_index(['district', 'timeperiod'])['exposure'],
                   dist_govt.set_index(['district', 'timeperiod'])['government-response'],
@@ -353,11 +349,12 @@ dist = pd.concat([dist_vul.set_index(['district', 'timeperiod']),
                   dist_risk.set_index(['district', 'timeperiod'])['risk-score'],
                   dist_indicators.set_index(['district', 'timeperiod'])[indicators]],
                   axis=1).reset_index()
-dist.to_csv(os.getcwd()+r'/flood-data-ecosystem-Odisha/RiskScoreModel/data/dist_test.csv')
-topsis.to_csv(os.getcwd()+r'/flood-data-ecosystem-Odisha/RiskScoreModel/data/topsis_test.csv')
+#dist.to_csv(os.getcwd()+r'/flood-data-ecosystem-Odisha/RiskScoreModel/data/dist_test.csv')
+#topsis.to_csv(os.getcwd()+r'/flood-data-ecosystem-Odisha/RiskScoreModel/data/topsis_test.csv')
 
 #print(topsis.shape)
-
+topsis = topsis.loc[:, ~topsis.columns.duplicated()]
+dist   = dist.loc[:, ~dist.columns.duplicated()]
 
 final = pd.concat([topsis, dist], ignore_index=True)
 
@@ -369,9 +366,5 @@ final['inundation-pct'] = final['inundation-pct']*100
 #final = pd.concat([topsis.set_index(['object-id', 'timeperiod']),
 #                   dist.set_index(['object-id', 'timeperiod'])], axis=1).reset_index()
 
-final.rename(columns={'preparedness-measures-tenders-awarded-value': 'restoration-measures-tenders-awarded-value', 'mean-sexratio':'sexratio'}, inplace=True)
-final.to_csv(os.getcwd()+r'/flood-data-ecosystem-Odisha/RiskScoreModel/data/risk_score_final_district.csv', index=False)
-
-#dist.rename(columns={'preparedness-measures-tenders-awarded-value': 'restoration-measures-tenders-awarded-value'}, inplace=True)
-#dist.to_csv(os.getcwd()+r'/IDS-DRR-Assam/RiskScoreModel/data/risk_score_final_dist.csv', index=False)
-
+final.rename(columns={'preparedness-measures-tenders-awarded-value': 'restoration-measures-tenders-awarded-value', 'mean-sexratio':'sexratio','healthcenters':'health-centers-count'}, inplace=True)
+final.to_csv(os.getcwd()+r'/data/risk_score_final_district.csv', index=False)

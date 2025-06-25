@@ -1,0 +1,7 @@
+sopd-tenders-awarded-value
+mean-ndvi
+sdrf-tenders-awarded-value
+ltif-tenders-awarded-value
+cidf-tenders-awarded-value
+mean-ndbi
+health-centres-count
