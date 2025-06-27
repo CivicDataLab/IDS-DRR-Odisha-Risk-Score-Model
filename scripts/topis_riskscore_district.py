@@ -156,18 +156,9 @@ indicators = ['total-tender-awarded-value',
     'avg-electricity',
     'block-piped-hhds-pct',
     'mean-sex-ratio',
-    #'population-affected-total',
-    #'crop-area',
+   
     'elevation-mean',
-    #'mean-ndvi',
-    #'mean-ndbi',
-    #'block-area',
-    #'are-new',
-    #'riverlevel-mean',
-    #'riverlevel-min',
-    #'riverlevel-max',
     'sum-young-population',
-    #'mean-cn',
     'slope-mean',
     'avg-tele',
     'distance-from-river',
@@ -179,6 +170,16 @@ indicators = ['total-tender-awarded-value',
     #'built-area',
     #'bare-ground',
     #'clouds',
+    #'mean-ndvi',
+    #'mean-ndbi',
+    #'block-area',
+    #'are-new',
+    #'riverlevel-mean',
+    #'riverlevel-min',
+    #'riverlevel-max',
+    #'mean-cn',
+    #'population-affected-total',
+    #'crop-area',
     'net-sown-area-in-hac',
     'road-count',
     'rail-count',
@@ -196,6 +197,17 @@ indicators = ['total-tender-awarded-value',
     "cultivated-area-affected-in-hectare",
     "road-length",
 
+    
+    #'topsis-score',
+    #'risk-score',
+    #'exposure',
+    #'vulnerability',
+    #'government-response',
+
+    ]
+
+# the following indicators need to be accounted for
+'''
     'crop-loss-total-in-hact', 
     'no-of-persons-evacuated-in-cyclone-bulbul', 
     'no-of-person-evacuated', 
@@ -219,14 +231,7 @@ indicators = ['total-tender-awarded-value',
     'house-damage-total--in-cyclone-bulbul', 
     'population-affected-in-cyclone-fani', 
     'no-of-person-evacuated-in-cyclone-fani'
-
-    #'topsis-score',
-    #'risk-score',
-    #'exposure',
-    #'vulnerability',
-    #'government-response',
-
-    ]
+'''
 
 # Define aggregation rules based on the columns
 aggregation_rules = {
