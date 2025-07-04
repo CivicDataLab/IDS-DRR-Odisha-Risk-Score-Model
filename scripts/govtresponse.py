@@ -20,24 +20,24 @@ warnings.filterwarnings("ignore", category=FutureWarning)   # mute pandas / skle
 # ---------------------------------------------------------------------------
 # 1. CONFIG
 # ---------------------------------------------------------------------------
-DATA_DIR  = Path("data")
-IN_FILE   = DATA_DIR / "MASTER_VARIABLES.csv"
+DATA_DIR  = Path("data/bihar")
+IN_FILE   ='/home/prajna/civicdatalab/ids-drr/bihar/flood-data-ecosystem-Bihar/MASTER_VARIABLES.csv'
 OUT_FILE  = DATA_DIR / "factor_scores_l1_government-response.csv"
 
 # columns
 GOV_RESPONSE_VARS = [
     "total_tender_awarded_value",
-    "SDRF_sanctions_awarded_value",
-    "RIDF_tenders_awarded_value",
-    "Preparedness Measures_tenders_awarded_value",
-    "Immediate Measures_tenders_awarded_value",
-    "Others_tenders_awarded_value",
+    # "SDRF_sanctions_awarded_value",
+    # "RIDF_tenders_awarded_value",
+    # "Preparedness Measures_tenders_awarded_value",
+    # "Immediate Measures_tenders_awarded_value",
+    # "Others_tenders_awarded_value",
 ]
 
 MODEL_VARS = [                 # used for Min–Max scaling + sum
     "total_tender_awarded_value",
-    "SDRF_sanctions_awarded_value",
-    "Others_tenders_awarded_value",
+    # "SDRF_sanctions_awarded_value",
+    # "Others_tenders_awarded_value",
 ]
 
 # ---------------------------------------------------------------------------

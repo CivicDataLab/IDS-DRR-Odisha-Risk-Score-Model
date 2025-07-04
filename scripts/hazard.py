@@ -16,8 +16,8 @@ warnings.filterwarnings("ignore")
 path = os.getcwd() + r"/flood-data-ecosystem-Odisha"
 
 # Load data
-master_variables = pd.read_csv(os.getcwd()+'/data/MASTER_VARIABLES.csv')
-hazard_vars = ['inundation_intensity_mean_nonzero', 'inundation_intensity_sum', 'mean_rain', 'max_rain','drainage_density', 'Sum_Runoff', 'Peak_Runoff','slope_mean','elevation_mean','distance_from_river','distance_from_sea']
+master_variables = pd.read_csv('/home/prajna/civicdatalab/ids-drr/bihar/flood-data-ecosystem-Bihar/MASTER_VARIABLES.csv')
+hazard_vars = ['mean_rain', 'max_rain']
 hazard_df = master_variables[hazard_vars + ['timeperiod', 'object_id']]
 hazard_df_months = []
 
@@ -57,21 +57,20 @@ for month in tqdm(hazard_df.timeperiod.unique()):
     hazard_df_month = hazard_df[hazard_df.timeperiod == month]
 
     # Apply custom binning based on value ranges
-    hazard_df_month['inundation_intensity_sum_binned'] = custom_binning(hazard_df_month, 'inundation_intensity_sum')
-    hazard_df_month['inundation_intensity_mean_nonzero_binned'] = custom_binning(hazard_df_month, 'inundation_intensity_mean_nonzero')
-    hazard_df_month['drainage_density_binned'] = custom_binning(hazard_df_month, 'drainage_density')
+    # hazard_df_month['inundation_intensity_sum_binned'] = custom_binning(hazard_df_month, 'inundation_intensity_sum')
+    # hazard_df_month['inundation_intensity_mean_nonzero_binned'] = custom_binning(hazard_df_month, 'inundation_intensity_mean_nonzero')
+    # hazard_df_month['drainage_density_binned'] = custom_binning(hazard_df_month, 'drainage_density')
     hazard_df_month['mean_rain_binned'] = custom_binning(hazard_df_month, 'mean_rain')
     hazard_df_month['max_rain_binned'] = custom_binning(hazard_df_month, 'max_rain')
-    hazard_df_month['Sum_Runoff_binned'] = custom_binning(hazard_df_month, 'Sum_Runoff')
-    hazard_df_month['Peak_Runoff_binned'] = custom_binning(hazard_df_month, 'Peak_Runoff')
-    hazard_df_month['slope_mean_binned'] = custom_binning(hazard_df_month, 'slope_mean')
-    hazard_df_month['elevation_mean_binned'] = custom_binning_reversed(hazard_df_month, 'elevation_mean')
-    hazard_df_month['distance_from_river_mean_binned'] = custom_binning_reversed(hazard_df_month, 'distance_from_river')
+    # hazard_df_month['Sum_Runoff_binned'] = custom_binning(hazard_df_month, 'Sum_Runoff')
+    # hazard_df_month['Peak_Runoff_binned'] = custom_binning(hazard_df_month, 'Peak_Runoff')
+    # hazard_df_month['slope_mean_binned'] = custom_binning(hazard_df_month, 'slope_mean')
+    # hazard_df_month['elevation_mean_binned'] = custom_binning_reversed(hazard_df_month, 'elevation_mean')
+    # hazard_df_month['distance_from_river_mean_binned'] = custom_binning_reversed(hazard_df_month, 'distance_from_river')
     
     # Average hazard score
-    hazard_df_month['flood-hazard'] = (hazard_df_month[['inundation_intensity_sum_binned','inundation_intensity_mean_nonzero_binned','drainage_density_binned', 'mean_rain_binned', 
-                                                        'max_rain_binned', 'Sum_Runoff_binned',
-                                                        'Peak_Runoff_binned','slope_mean_binned','elevation_mean_binned','distance_from_river_mean_binned']]
+    hazard_df_month['flood-hazard'] = (hazard_df_month[[ 'mean_rain_binned', 
+                                                        'max_rain_binned']]
                                        .astype(float).mean(axis=1))
     hazard_df_month['flood-hazard'] = round(hazard_df_month['flood-hazard'])
 
@@ -83,4 +82,4 @@ master_variables = master_variables.merge(hazard[['timeperiod', 'object_id', 'fl
 
 
 # Save the final results
-master_variables.to_csv(os.getcwd() + r'/data/factor_scores_l1_hazard.csv', index=False)
+master_variables.to_csv(os.getcwd() + r'/data/bihar/factor_scores_l1_hazard.csv', index=False)

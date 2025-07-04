@@ -8,14 +8,10 @@ import warnings
 # Suppress all warnings
 warnings.filterwarnings("ignore")
 
-master_variables = pd.read_csv(os.getcwd()+'/data/MASTER_VARIABLES.csv')
+master_variables = pd.read_csv('/home/prajna/civicdatalab/ids-drr/bihar/flood-data-ecosystem-Bihar/MASTER_VARIABLES.csv')
 
 exposure_vars = ['sum_population', 'total_hhd',
-                      "schools_count",
-                      "HealthCenters",
-                      "rail_length",
-                      "road_length",
-                      "net_sown_area_in_hac"]
+                     ]
 
 exposure_df = master_variables[exposure_vars + ['timeperiod', 'object_id']]
 
@@ -59,4 +55,4 @@ exposure = pd.concat(exposure_df_months)
 master_variables = master_variables.merge(exposure[['timeperiod', 'object_id', 'exposure']],
                        on = ['timeperiod', 'object_id'])
 
-master_variables.to_csv(os.getcwd()+'/data/factor_scores_l1_exposure.csv', index=False)
+master_variables.to_csv(os.getcwd()+'/data/bihar/factor_scores_l1_exposure.csv', index=False)

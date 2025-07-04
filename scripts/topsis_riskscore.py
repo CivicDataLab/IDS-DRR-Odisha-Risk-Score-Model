@@ -12,7 +12,7 @@ resp_w = 2
 ## MASTER DATA WITH FACTOR SCORES
 #print(os.getcwd())
 ## INPUT: FACTOR SCORES CSV
-factor_scores_dfs = glob.glob(os.getcwd()+'/data/factor_scores_l1*.csv')
+factor_scores_dfs = glob.glob(os.getcwd()+'/data/bihar/factor_scores_l1*.csv')
 
 # Select only the columns that exist in both the DataFrame and the list
 factors = [ 'flood-hazard', 'exposure', 'vulnerability','government-response']#,'historical_tenders','flood-hazard-float']
