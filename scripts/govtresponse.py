@@ -12,6 +12,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import os 
 from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 
@@ -20,14 +21,15 @@ warnings.filterwarnings("ignore", category=FutureWarning)   # mute pandas / skle
 # ---------------------------------------------------------------------------
 # 1. CONFIG
 # ---------------------------------------------------------------------------
-DATA_DIR  = Path("data")
+DATA_DIR  = Path(os.getcwd()) / "data"
 IN_FILE   = DATA_DIR / "MASTER_VARIABLES.csv"
 OUT_FILE  = DATA_DIR / "factor_scores_l1_government-response.csv"
 
 # columns
 GOV_RESPONSE_VARS = [
     "total_tender_awarded_value",
-    "SDRF_sanctions_awarded_value",
+    "SDRF_tenders_awarded_value",
+     "SDMF_tenders_awarded_value",
     "RIDF_tenders_awarded_value",
     "Preparedness Measures_tenders_awarded_value",
     "Immediate Measures_tenders_awarded_value",
@@ -36,7 +38,8 @@ GOV_RESPONSE_VARS = [
 
 MODEL_VARS = [                 # used for Min–Max scaling + sum
     "total_tender_awarded_value",
-    "SDRF_sanctions_awarded_value",
+    "SDMF_tenders_awarded_value",
+    "SDRF_tenders_awarded_value",
     "Others_tenders_awarded_value",
 ]
 

@@ -40,7 +40,7 @@ print("AHP-derived weights:", weights)
 warnings.filterwarnings("ignore")
 path = os.getcwd() #+ r"/flood-data-ecosystem-Odisha"
 
-master_variables = pd.read_csv(path+r'/data/MASTER_VARIABLES.csv')
+master_variables = pd.read_csv(path+ '/data/MASTER_VARIABLES.csv')
 
 hazard_vars = ['sum_rain', 'Mean_Daily_Runoff','elevation_mean','distance_from_sea']#'slope_mean','distance_from_river',
 
@@ -93,6 +93,6 @@ hazard = pd.concat(hazard_df_months)
 master_variables = master_variables.merge(hazard[['timeperiod', 'object_id', 'flood-hazard']],
                        on = ['timeperiod', 'object_id'],how='left')
 print(master_variables.columns)
-master_variables.to_csv(path+r'/data/factor_scores_l1_flood-hazard.csv', index=False)
+master_variables.to_csv(path+ '/data/factor_scores_l1_flood-hazard.csv', index=False)
 
 # Normalize data using MinMaxScaler
