@@ -46,12 +46,14 @@ merged_df.sort_values(by=['object_id', 'financial_year', 'timeperiod'], inplace=
 
 cumulative_vars = [
     'total_tender_awarded_value', 
+    'SDMF_tenders_awarded_value',
     #'Repair and Restoration_tenders_awarded_value',
     'Preparedness Measures_tenders_awarded_value', 
     'Immediate Measures_tenders_awarded_value', 
+    'RIDF_tenders_awarded_value',
     'Others_tenders_awarded_value',
     #'relief_and_mitigation_sanction_value',
-    'SDRF_sanctions_awarded_value',
+    'SDRF_tenders_awarded_value',
 ]
 
 for var in cumulative_vars:
@@ -87,10 +89,10 @@ topsis = pd.concat(df_months)
 
 topsis.columns = [col.lower().replace('_', '-').replace(' ', '-') for col in topsis.columns]
 print(topsis.columns)
-topsis.to_csv(os.getcwd()+r'/data/risk_score.csv', index=False)
+topsis.to_csv(os.getcwd()+ '/data/risk_score.csv', index=False)
 
 ## DISTRICT LEVEL SCORES
-dist_ids = pd.read_csv(os.getcwd()+r'/assets/district_objectid.csv')
+dist_ids = pd.read_csv(os.getcwd()+ '/assets/district_objectid.csv')
 
 compositescorelabels = ['1','2','3','4','5']
 
@@ -123,9 +125,9 @@ dist_risk = dist_risk.merge(dist_ids, on='district')
 
 indicators = ['total-tender-awarded-value',
     #'sopd-tenders-awarded-value',
-    'sdrf-sanctions-awarded-value',
-    #'sdrf-tenders-awarded-value',
-    #'ridf-tenders-awarded-value',
+    #'sdrf-sanctions-awarded-value',
+    'sdrf-tenders-awarded-value',
+    'ridf-tenders-awarded-value',
     #'ltif-tenders-awarded-value',
     #'cidf-tenders-awarded-value',
     'preparedness-measures-tenders-awarded-value',
@@ -192,17 +194,17 @@ indicators = ['total-tender-awarded-value',
     'sum-runoff',
     'peak-runoff',
     'distance-from-sea',
-    "total-no-of-death-of-humans-in-flood-and-cyclone",
-    "population-affected", 
-    "cultivated-area-affected-in-hectare",
-    "road-length",
+    #"total-no-of-death-of-humans-in-flood-and-cyclone",
+    #"population-affected", 
+    #"cultivated-area-affected-in-hectare",
+    #"road-length",
 
     
-    #'topsis-score',
-    #'risk-score',
-    #'exposure',
-    #'vulnerability',
-    #'government-response',
+    'topsis-score',
+    'risk-score',
+    'exposure',
+    'vulnerability',
+    'government-response',
 
     ]
 
@@ -237,11 +239,11 @@ indicators = ['total-tender-awarded-value',
 aggregation_rules = {
     # Sum columns
     'total-tender-awarded-value': 'sum',
-    #'ridf-tenders-awarded-value': 'sum',
+    'ridf-tenders-awarded-value': 'sum',
     'preparedness-measures-tenders-awarded-value': 'sum',
     'immediate-measures-tenders-awarded-value': 'sum',
     'others-tenders-awarded-value': 'sum',
-    'sdrf-sanctions-awarded-value': 'sum',
+    'sdrf-tenders-awarded-value': 'sum',
 
     'sum-population': 'sum',
     'inundation-intensity-sum': 'sum',
@@ -280,14 +282,20 @@ aggregation_rules = {
 
     #'efficiency': 'mean',
 
-    "total-no-of-death-of-humans-in-flood-and-cyclone": 'sum',
-    "population-affected": 'max', 
-    "cultivated-area-affected-in-hectare": 'sum',
-    "road-length": 'sum',
+    #"total-no-of-death-of-humans-in-flood-and-cyclone": 'sum',
+    #"population-affected": 'max', 
+    #"cultivated-area-affected-in-hectare": 'sum',
+    #"road-length": 'sum',
 
    
     # Max for hazard levels
     'max-rain':'max',
+    'topsis-score': 'mean',
+    'risk-score': 'mean',
+    'exposure': 'mean',
+    'vulnerability': 'mean',
+    'government-response': 'mean',
+    'flood-hazard': 'mean',
 }
 
 rounding_rules = {
@@ -311,9 +319,15 @@ rounding_rules = {
     'road-length':0,
     'elevation-mean':0,
     'slope-mean':0,
+    'topsis-score':2,
+    'flood-hazard': 0,
+    'risk-score': 0,
+    'exposure': 0,
+    'vulnerability': 0,
+    'government-response': 0,
+}
     #'crop-area':0,
 
-}
 
 dist_indicators = topsis.groupby(['district', 'timeperiod']).agg(aggregation_rules).reset_index()
 
@@ -372,4 +386,4 @@ final['inundation-pct'] = final['inundation-pct']*100
 #                   dist.set_index(['object-id', 'timeperiod'])], axis=1).reset_index()
 
 final.rename(columns={'preparedness-measures-tenders-awarded-value': 'restoration-measures-tenders-awarded-value', 'mean-sexratio':'sexratio','healthcenters':'health-centers-count'}, inplace=True)
-final.to_csv(os.getcwd()+r'/data/risk_score_final_district.csv', index=False)
+final.to_csv(os.getcwd()+'/data/risk_score_final_district.csv', index=False)
