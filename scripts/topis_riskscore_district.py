@@ -47,7 +47,6 @@ merged_df.sort_values(by=['object_id', 'financial_year', 'timeperiod'], inplace=
 cumulative_vars = [
     'total_tender_awarded_value', 
     'SDMF_tenders_awarded_value',
-    #'Repair and Restoration_tenders_awarded_value',
     'Preparedness Measures_tenders_awarded_value', 
     'Immediate Measures_tenders_awarded_value', 
     'RIDF_tenders_awarded_value',
@@ -127,6 +126,7 @@ indicators = ['total-tender-awarded-value',
     #'sopd-tenders-awarded-value',
     #'sdrf-sanctions-awarded-value',
     'sdrf-tenders-awarded-value',
+    'sdmf-tenders-awarded-value',
     'ridf-tenders-awarded-value',
     #'ltif-tenders-awarded-value',
     #'cidf-tenders-awarded-value',
@@ -140,6 +140,16 @@ indicators = ['total-tender-awarded-value',
     #'roads',
     #'bridge',
     #'embankment-breached',
+
+    # fy-cumsum indicators (derived from cumulative_vars)
+    'total-tender-awarded-value-fy-cumsum',
+    'sdmf-tenders-awarded-value-fy-cumsum',
+    'preparedness-measures-tenders-awarded-value-fy-cumsum',
+    'immediate-measures-tenders-awarded-value-fy-cumsum',
+    'ridf-tenders-awarded-value-fy-cumsum',
+    'others-tenders-awarded-value-fy-cumsum',
+    'sdrf-tenders-awarded-value-fy-cumsum',
+
     'sum-population',
     'inundation-intensity-sum',
     'total-hhd',
@@ -208,6 +218,9 @@ indicators = ['total-tender-awarded-value',
 
     ]
 
+# Remove duplicates from indicators list (safety net)
+indicators = list(dict.fromkeys(indicators))
+
 # the following indicators need to be accounted for
 '''
     'crop-loss-total-in-hact', 
@@ -244,6 +257,16 @@ aggregation_rules = {
     'immediate-measures-tenders-awarded-value': 'sum',
     'others-tenders-awarded-value': 'sum',
     'sdrf-tenders-awarded-value': 'sum',
+     'sdmf-tenders-awarded-value': 'sum',
+
+    # fy-cumsum aggregation rules (sum across objects within district/timeperiod)
+    'total-tender-awarded-value-fy-cumsum': 'sum',
+    'sdmf-tenders-awarded-value-fy-cumsum': 'sum',
+    'preparedness-measures-tenders-awarded-value-fy-cumsum': 'sum',
+    'immediate-measures-tenders-awarded-value-fy-cumsum': 'sum',
+    'ridf-tenders-awarded-value-fy-cumsum': 'sum',
+    'others-tenders-awarded-value-fy-cumsum': 'sum',
+    'sdrf-tenders-awarded-value-fy-cumsum': 'sum',
 
     'sum-population': 'sum',
     'inundation-intensity-sum': 'sum',
@@ -325,6 +348,15 @@ rounding_rules = {
     'exposure': 0,
     'vulnerability': 0,
     'government-response': 0,
+
+    # fy-cumsum rounding rules
+    'total-tender-awarded-value-fy-cumsum': 0,
+    'sdmf-tenders-awarded-value-fy-cumsum': 0,
+    'preparedness-measures-tenders-awarded-value-fy-cumsum': 0,
+    'immediate-measures-tenders-awarded-value-fy-cumsum': 0,
+    'ridf-tenders-awarded-value-fy-cumsum': 0,
+    'others-tenders-awarded-value-fy-cumsum': 0,
+    'sdrf-tenders-awarded-value-fy-cumsum': 0,
 }
     #'crop-area':0,
 

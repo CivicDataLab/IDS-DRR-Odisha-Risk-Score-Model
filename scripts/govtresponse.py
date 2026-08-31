@@ -29,7 +29,7 @@ OUT_FILE  = DATA_DIR / "factor_scores_l1_government-response.csv"
 GOV_RESPONSE_VARS = [
     "total_tender_awarded_value",
     "SDRF_tenders_awarded_value",
-     "SDMF_tenders_awarded_value",
+    "SDMF_tenders_awarded_value",
     "RIDF_tenders_awarded_value",
     "Preparedness Measures_tenders_awarded_value",
     "Immediate Measures_tenders_awarded_value",
@@ -123,7 +123,7 @@ gov_response = pd.concat(response_frames, ignore_index=True)
 # 5. MERGE BACK & SAVE
 # ---------------------------------------------------------------------------
 out = (
-    master.drop(columns=GOV_RESPONSE_VARS)        # avoid duplicates
+    master.drop(columns=GOV_RESPONSE_VARS)       
           .merge(gov_response, on=["object_id", "timeperiod"], how="left")
 )
 

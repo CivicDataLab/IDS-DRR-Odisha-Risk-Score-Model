@@ -49,7 +49,7 @@ weights = {
     'elevation_mean': 0.22,
     #'slope_mean': 0.19,
     'distance_from_sea': 0.11,
-    #'distance_from_river': 0.11,
+    'distance_from_river': 0.11,
 
     'sum_rain': 0.08,
     'Mean_Daily_Runoff': 0.03  # Adjust to match the variable name if different
