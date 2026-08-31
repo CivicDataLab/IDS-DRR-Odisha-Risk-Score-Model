@@ -47,7 +47,6 @@ merged_df.sort_values(by=['object_id', 'financial_year', 'timeperiod'], inplace=
 cumulative_vars = [
     'total_tender_awarded_value', 
     'SDMF_tenders_awarded_value',
-    #'Repair and Restoration_tenders_awarded_value',
     'Preparedness Measures_tenders_awarded_value', 
     'Immediate Measures_tenders_awarded_value', 
     'RIDF_tenders_awarded_value',
