@@ -109,6 +109,9 @@ hazard_vars = list(weights.keys())
 # Inundation is NOT inverted -- higher observed inundation directly means higher hazard.
 inverse_vars = ['elevation_mean', 'distance_from_sea', 'distance_from_river']
 
+# inorder to remove the skewness of the variables log1p applied before MinMax scaling.
+log_vars = ['inundation_intensity_mean_nonzero', 'inundation_intensity_sum']
+
 hazard_df = master_variables[hazard_vars + ['timeperiod', 'object_id']]
 
 hazard_df_months = []
@@ -116,6 +119,12 @@ for month in tqdm(hazard_df.timeperiod.unique()):
     scaler = MinMaxScaler()
     hazard_df = master_variables[hazard_vars + ['timeperiod', 'object_id']]
     hazard_df_month = hazard_df[hazard_df.timeperiod == month].copy()
+
+    # Log-transform the heavily skewed inundation columns (~96% zeros, skew up
+    # to ~21) before MinMax scaling, as in the Assam model. Without this a few
+    # extreme units set the max and squash every other flooded unit towards 0.
+    hazard_df_month[log_vars] = np.log1p(hazard_df_month[log_vars])
+
     hazard_df_month[hazard_vars] = scaler.fit_transform(hazard_df_month[hazard_vars])
 
     for var in inverse_vars:
